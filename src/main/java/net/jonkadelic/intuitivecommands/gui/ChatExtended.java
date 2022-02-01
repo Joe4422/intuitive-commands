@@ -15,7 +15,6 @@ public class ChatExtended extends Chat
     private int suggestionOffset = 0;
     private final int maxVisibleSuggestions = 20;
     private CommandBase currentCommand = null;
-    private String helpText = "";
 
     @Override
     public void render(int mouseX, int mouseY, float delta)
@@ -51,6 +50,13 @@ public class ChatExtended extends Chat
         }
     }
 
+    /**
+     * Fetches the word index of the current word in the message being typed.
+     * This behaves differently whether the message ends with a space - for example, in the message
+     * "three blind mice", the current word index is 2, but in the message "three blind mice ", the
+     * current word index is 3.
+     * @return The index of the word currently being typed.
+     */
     private int indexOfCurrentWordInMessage()
     {
         final String[] s = getText.split(" ");
@@ -200,6 +206,9 @@ public class ChatExtended extends Chat
         }
     }
 
+    /**
+     * Updates the set of available suggestions based on the contents of getText.
+     */
     private void updateSuggestions()
     {
         suggestionIndex = 0;
@@ -227,34 +236,32 @@ public class ChatExtended extends Chat
             Arrays.sort(suggestions);
             return;
         }
-        else if (s.length > 1)
+
+        final String commandText = s[0].substring(1);
+
+        for (int i = 0; i < CommandHandler.getInstance().getCommandCount(); i++)
         {
-            final String commandText = s[0].substring(1);
-
-            for (int i = 0; i < CommandHandler.getInstance().getCommandCount(); i++)
+            for (int j = 0; j < CommandHandler.getInstance().getCommandByIndex(i).triggers.length; j++)
             {
-                for (int j = 0; j < CommandHandler.getInstance().getCommandByIndex(i).triggers.length; j++)
+                if (CommandHandler.getInstance().getCommandByIndex(i).triggers[j].equals(commandText))
                 {
-                    if (CommandHandler.getInstance().getCommandByIndex(i).triggers[j].equals(commandText))
-                    {
-                        currentCommand = CommandHandler.getInstance().getCommandByIndex(i);
-                        break;
-                    }
-                }
-
-                if (currentCommand != null)
-                {
+                    currentCommand = CommandHandler.getInstance().getCommandByIndex(i);
                     break;
                 }
             }
 
-            if (currentCommand == null)
+            if (currentCommand != null)
             {
-                return;
+                break;
             }
-
-            suggestions = currentCommand.getSuggestions(minecraft, minecraft.level, minecraft.player, s);
-            Arrays.sort(suggestions);
         }
+
+        if (currentCommand == null)
+        {
+            return;
+        }
+
+        suggestions = currentCommand.getSuggestions(minecraft, minecraft.level, minecraft.player, s);
+        Arrays.sort(suggestions);
     }
 }
